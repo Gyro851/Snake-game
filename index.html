@@ -1,0 +1,182 @@
+<!-- A primary requirement is that all styles, JS, and content be contained in a single file -->
+<html>
+  <head>
+    <style>
+      #gc {
+        border: 1playerX solid #666;
+        position: absolute;
+        left: calc(50% - 300px);
+        top: calc(50% - 300px);
+        border-radius: 4px;
+        box-shadow: 0 0 57px 17px #ddd;
+      }
+      #score {
+        font-family: arial;
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        left: calc(50% - 410px);
+        top: calc(50% - 300px);
+      }
+      #instr {
+        position: absolute;
+        width: 400px;
+        height: 97px;
+        z-index: 1; 
+        left: calc(50% - 200px);
+        top: calc(50% - 100px);
+        background: white;
+        padding: 10px;
+        font-family: arial;
+        text-align: center;
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gc" width="600" height="600" style=" "></canvas>
+    <div id="score" style="">Score: 0 <br/><br/> Level: 0</div>
+    <div id="instr" style="">
+      Use the arrow keys to start and steer the snake. <br/>
+      Goal: Eat apples, and don't run into yourself.<br/><br/>
+      <b>To stare: Press an arrow key</b>
+    </div>
+    <script>
+      window.onload = function () {
+        canv = document.getElementById("gc");
+        ctx = canv.getContext("2d");
+        document.addEventListener("keydown", keyPush);
+        setInterval(tick, 1000 / (10 * speed));
+      };
+    
+      started = false;
+      playerX = 10;
+      playerY = 10;
+      gameSquares = 20;
+      tileCount = 30;
+      appleX = 15;
+      appleY = 15;
+      xVelocity = 0;
+      yVelocity = 0;
+      trail = [];
+      tail = 5;
+      score = 0;
+      level = 0;
+      speed = 0.6;
+    
+      /**
+       * Main loop
+       * Todo (Mark): Rather than one main function which does everything, break this into 4 smaller functions which
+       * move the snake, detect/handle collisions with wall/snake/apple, handle shifting the snakes position.
+       */ 
+      function tick() {
+        // Move the snake
+        playerX += xVelocity; // move the snake in the direction of velocity
+        playerY += yVelocity;
+        // If you hit the edge teleport to oposite side
+        if (playerX < 0) { 
+          playerX = tileCount - 1;
+        }
+        if (playerX > tileCount - 1) {
+          playerX = 0;
+        }
+        if (playerY < 0) {
+          playerY = tileCount - 1;
+        }
+        if (playerY > tileCount - 1) {
+          playerY = 0;
+        }
+
+        // Color the board and snake
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canv.width, canv.height);
+        ctx.fillStyle = "lime";
+      
+        for (var i = 0; i < trail.length; i++) {
+          ctx.fillRect(trail[i].x * gameSquares, trail[i].y * gameSquares, gameSquares - 2, gameSquares - 2);
+          // On collision with snake
+          if (trail[i].x == playerX && trail[i].y == playerY && started) { // Game over
+            playerX = 0;
+            playerY = 0;
+            xVelocity = 0;
+            yVelocity = 0;
+            alert(`Game over! Score: ${score}`);
+            started = !started;
+            window.location.reload();
+            return;
+          }
+        }
+
+        // Add to the front of the snake
+        trail.push({ x: playerX, y: playerY });
+
+        // Trim off where the snake was last move
+        while (trail.length > tail) {
+          trail.shift();
+        }
+    
+        // On collision with apple
+        if (appleX == playerX && appleY == playerY) {
+          tail += 2;
+          appleX = Math.floor(Math.random() * tileCount);
+          appleY = Math.floor(Math.random() * tileCount);
+          score++;
+          if (score >= Math.floor(Math.pow(1.4, level))) {
+            level ++;
+          }
+          speed += 0.5;
+          document.getElementById('score').innerHTML = `Score: ${score} <br/><br/> Level: ${level}`;
+        }
+
+        // Color the apple
+        ctx.fillStyle = "red";
+        ctx.fillRect(appleX * gameSquares, appleY * gameSquares, gameSquares - 2, gameSquares - 2);
+      }
+    
+      /**
+       * Listens for up/down/right/left keys and adjusts velocity
+       * @param {Event} e 
+       */
+      function keyPush(e) {
+        if (!started && e.keyCode === 37 || e.keyCode === 38 || e.keyCode === 39 || e.keyCode === 40) {
+          document.getElementById('instr').style.display = 'none'
+        }
+        if (!started) {
+          started = !started;
+          playerX = 10;
+          playerY = 10;
+        }
+        switch (e.keyCode) {
+          case 37: /* Left */
+            if (xVelocity === 1 && yVelocity === 0) { // disallow backtrace
+              return;
+            }
+            xVelocity = -1;
+            yVelocity = 0;
+            break;
+          case 38: /* Done */
+            if (xVelocity === 0 && yVelocity === 1) { // disallow backtrace
+              return;
+            }
+            xVelocity = 0;
+            yVelocity = -1;
+            break;
+          case 39: /* Right */
+            if (xVelocity === -1 && yVelocity === 0) { // disallow backtrace
+              return;
+            }
+            xVelocity = 1;
+            yVelocity = 0;
+            break;
+          case 40: /* Up */
+            if (xVelocity === 0 && yVelocity === -1) { // disallow backtrace
+              return;
+            }
+            xVelocity = 0;
+            yVelocity = 1;
+            break;
+        }
+      }
+    </script>    
+  </body>
+</html>
